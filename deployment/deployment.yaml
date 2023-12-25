@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ddlot-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ddlot
+  template:
+    metadata:
+      labels:
+        app: ddlot
+    spec:
+      containers:
+        - name: ddlot
+          image: hatembd/ddlot
+          ports:
+            - containerPort: 80
