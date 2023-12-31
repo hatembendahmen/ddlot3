@@ -1,19 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ddlot-deployment
+  name: nginx-deployment
 spec:
   replicas: 3
-  selector:
-    matchLabels:
-      app: ddlot
   template:
     metadata:
       labels:
-        app: ddlot
+        app: nginx-web
     spec:
       containers:
-        - name: ddlot
-          image: hatembd/ddlot
-          ports:
-            - containerPort: 80
+      - name: nginx-image
+        image: hatembd/ddlot
+  selector:
+    matchLabels:
+      app: nginx-web
+
