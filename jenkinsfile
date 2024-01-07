@@ -1,0 +1,60 @@
+node { 
+    
+    stage("Git Clone"){
+
+
+        git credentialsId: 'github-credentials', url: 'https://github.com/hatembd/ddlot.git'
+    }    
+
+
+   stage('Build Docker Image'){
+            sh 'docker version'
+		    sh 'docker build -t hatembd/ddlot .'
+	}
+	stage("Docker Login"){
+
+        withCredentials([string(credentialsId: 'DOCKER_HUB_PASSWORD', variable: 'PASSWORD')]) {
+
+            sh 'docker login -u hatembd -p $PASSWORD'
+
+        }
+
+    } 
+    stage("Push Image to Docker Hub"){
+
+        sh 'docker push  hatembd/ddlot'
+
+    }
+    stage("SSH Into k8s Server") {
+
+        def remote = [:]
+
+        remote.name = 'master'
+
+        remote.host = '192.168.50.10'
+        
+        remote.user = 'vagrant'
+        remote.password = 'vagrant'
+
+        remote.allowAnyHosts = true
+
+    
+        stage('Put deployment.yaml and service.yaml onto masternode') {
+
+            sshPut remote: remote, from: 'deployment.yaml', into: '.'
+            sshPut remote: remote, from: 'service.yaml', into: '.'
+
+        }
+        stage('Deploy DDLOT') {
+
+          sshCommand remote: remote, command: "kubectl apply -f deployment.yaml"
+          sshCommand remote: remote, command: "kubectl apply -f service.yaml"
+
+        }
+
+            
+    } 
+
+      
+        
+}
