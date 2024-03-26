@@ -10,6 +10,7 @@ node {
    stage('Build Docker Image'){
             sh 'docker version'
 		    sh 'docker build -t hatembd/ddlot .'
+		    
 	}
 	stage("Docker Login"){
 
@@ -25,36 +26,50 @@ node {
         sh 'docker push  hatembd/ddlot'
 
     }
-    stage("SSH Into k8s Server") {
+    stage("Accessto master node") {
 
         def remote = [:]
 
         remote.name = 'master'
 
-        remote.host = '192.168.50.10'
+        remote.host = '192.168.2.30'
         
         remote.user = 'vagrant'
         remote.password = 'vagrant'
 
         remote.allowAnyHosts = true
-
+        
+        
     
-        stage('Put deployment.yaml and service.yaml onto masternode') {
+        stage('Put deployment.yaml, grafana.yaml and service.yaml onto cluster') {
 
             sshPut remote: remote, from: 'deployment.yaml', into: '.'
             sshPut remote: remote, from: 'service.yaml', into: '.'
-
+            sshPut remote: remote, from: 'grafana.yaml', into: '.'
         }
+        
+        stage('Delete deployment.yaml and servic.yaml') {
+            sshCommand remote: remote, command: "kubectl delete -f deployment.yaml --ignore-not-found=true"
+            sshCommand remote: remote, command: "kubectl delete -f service.yaml --ignore-not-found=true"
+        }
+        
         stage('Deploy DDLOT') {
-
           sshCommand remote: remote, command: "kubectl apply -f deployment.yaml"
           sshCommand remote: remote, command: "kubectl apply -f service.yaml"
+
+        }
+        stage('Install Grafana') {
+          sshCommand remote: remote, command: "kubectl delete -f grafana.yaml --ignore-not-found=true"
+          sshCommand remote: remote, command: "kubectl apply -f grafana.yaml"
 
         }
 
             
     } 
 
+      
+        
+}
       
         
 }
